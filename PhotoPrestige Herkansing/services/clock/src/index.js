@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import { connectDB } from "./config/db.js";
+import { connectDB } from "./utils/db.js";
 import { connectRabbit, recoverScheduledTargets } from "./utils/rabbitmq.js";
 import { connectPublisher } from "./utils/rabbitmqPublisher.js";
 
