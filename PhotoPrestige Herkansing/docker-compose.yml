@@ -86,7 +86,7 @@ services:
       - rabbitmq
 
   clock-service:
-    build: ./clock-service
+    build: ./services/clock
     container_name: clock-service
     restart: always
     environment:
