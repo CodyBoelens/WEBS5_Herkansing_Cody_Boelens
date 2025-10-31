@@ -85,6 +85,16 @@ services:
       - mongo
       - rabbitmq
 
+  clock-service:
+    build: ./clock-service
+    container_name: clock-service
+    restart: always
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/photo_prestige
+    depends_on:
+      - mongo
+      - rabbitmq
+
 
 volumes:
   mongo_data:
