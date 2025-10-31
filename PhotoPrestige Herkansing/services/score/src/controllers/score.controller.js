@@ -20,9 +20,12 @@ export async function submitScore(req, res) {
     if (!playerPhoto) return res.status(400).json({ message: "No image uploaded" });
 
     const target = await TargetCache.findOne({ targetId });
-    if (!target) {
-      return res.status(404).json({ message: "Target not found in cache" });
+    if (!target) return res.status(404).json({ message: "Target not found in cache" });
+    if (target.expired) {
+      return res.status(400).json({ message: "Target has expired — no more scores allowed." });
     }
+
+    
 
     console.log("📸 Uploading images to Imagga...");
     console.log(`/app/${playerPhoto.path}`)

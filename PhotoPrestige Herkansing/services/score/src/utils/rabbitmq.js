@@ -5,30 +5,50 @@ let channel;
 
 export async function connectRabbit() {
   try {
-    const connection = await amqp.connect(process.env.RABBITMQ_URL || "amqp://rabbitmq:5672");
+    const connection = await amqp.connect("amqp://rabbitmq:5672");
     channel = await connection.createChannel();
-    console.log("✅ Score Service connected to RabbitMQ");
+    console.log("✅ ScoreService connected to RabbitMQ");
 
-    const queue = "target_created";
-    await channel.assertQueue(queue, { durable: true });
+    // Queue for new targets
+    await channel.assertQueue("target_created", { durable: true });
 
-    channel.consume(queue, async (msg) => {
+    // Queue for expired targets
+    await channel.assertQueue("target_expired", { durable: true });
+
+    // Listen for new targets being created
+    channel.consume("target_created", async (msg) => {
       if (!msg) return;
+      const target = JSON.parse(msg.content.toString());
+      console.log("📥 Received target_created:", target.title);
 
-      const targetData = JSON.parse(msg.content.toString());
-      console.log("📥 Received target:", targetData);
+      await TargetCache.findOneAndUpdate(
+        { targetId: target._id },
+        {
+          targetId: target._id,
+          title: target.title,
+          description: target.description,
+          imageUrl: target.imageUrl,
+          deadline: target.deadline,
+          expired: false,
+        },
+        { upsert: true }
+      );
 
-      try {
-        await TargetCache.findOneAndUpdate(
-          { targetId: targetData._id },
-          { ...targetData, targetId: targetData._id },
-          { upsert: true, new: true }
-        );
-        console.log(`💾 Cached target ${targetData._id}`);
-      } catch (err) {
-        console.error("❌ Error caching target:", err.message);
-      }
+      channel.ack(msg);
+    });
 
+    // Listen for expired targets
+    channel.consume("target_expired", async (msg) => {
+      if (!msg) return;
+      const data = JSON.parse(msg.content.toString());
+      console.log("⌛ Received target_expired:", data.title);
+
+      await TargetCache.findOneAndUpdate(
+        { targetId: data.targetId },
+        { expired: true }
+      );
+
+      console.log(`🔒 Target "${data.title}" marked expired in ScoreService cache`);
       channel.ack(msg);
     });
   } catch (err) {

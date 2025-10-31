@@ -1,14 +1,15 @@
 import mongoose from "mongoose";
 
 const targetSchema = new mongoose.Schema({
-  ownerId: { type: String, required: true },
-  title: { type: String, required: true },
+  ownerId: String,
+  title: String,
   description: String,
-  imageUrl: { type: String, required: true },
+  imageUrl: String,
   latitude: Number,
   longitude: Number,
   radius: Number,
   deadline: Date,
-}, { timestamps: true });
+  expired: { type: Boolean, default: false },
+});
 
 export default mongoose.model("Target", targetSchema);
